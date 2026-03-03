@@ -1,0 +1,5 @@
+{
+  "name": "Muhenga Image AI",
+  "description": "Generate stunning images using Stable Diffusion via Replicate API.",
+  "requestFramePermissions": []
+}
