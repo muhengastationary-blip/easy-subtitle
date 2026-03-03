@@ -4,7 +4,6 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, GenerateContentResponse, Modality } from "@google/genai";
 import Markdown from 'react-markdown';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -186,26 +185,17 @@ export default function App() {
     }
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error('GEMINI_API_KEY is missing.');
-      }
       setPlayingAudioId(message.id);
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview-tts",
-        contents: [{ parts: [{ text: message.content }] }],
-        config: {
-          responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: 'Kore' },
-            },
-          },
-        },
+      const response = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: message.content }),
       });
 
-      const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (!response.ok) throw new Error('TTS failed');
+      const data = await response.json();
+      const base64Audio = data.audio;
+
       if (base64Audio) {
         const audioUrl = `data:audio/mp3;base64,${base64Audio}`;
         setMessages(prev => prev.map(msg => 
@@ -308,23 +298,6 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error('GEMINI_API_KEY is missing. Please set it in your environment variables.');
-      }
-      
-      const ai = new GoogleGenAI({ apiKey });
-      const chat = ai.chats.create({
-        model: "gemini-3-flash-preview",
-        config: {
-          systemInstruction: SYSTEM_INSTRUCTION,
-        },
-        history: messages.map(m => ({
-          role: m.role === 'user' ? 'user' : 'model',
-          parts: [{ text: m.content }]
-        }))
-      });
-
       const assistantMessageId = (Date.now() + 1).toString();
       let assistantContent = '';
 
@@ -335,42 +308,48 @@ export default function App() {
         timestamp: new Date(),
       }]);
 
-      let result;
       if (currentImage) {
-        // For multimodal, we use generateContent instead of chat.sendMessage for the first turn with image
-        // or we can just send it as a part.
-        const imagePart = {
-          inlineData: {
-            mimeType: currentImage.split(';')[0].split(':')[1],
-            data: currentImage.split(',')[1],
-          },
-        };
-        const textPart = { text: currentInput || "Explain this image." };
-        
-        const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: { parts: [imagePart, textPart] },
-          config: { systemInstruction: SYSTEM_INSTRUCTION }
+        const response = await fetch('/api/multimodal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            message: currentInput || "Explain this image.",
+            image: currentImage,
+            systemInstruction: SYSTEM_INSTRUCTION
+          }),
         });
+
+        if (!response.ok) throw new Error('Multimodal request failed');
+        const data = await response.json();
+        assistantContent = data.text || "";
         
-        assistantContent = response.text || "";
         setMessages(prev => prev.map(msg => 
           msg.id === assistantMessageId ? { ...msg, content: assistantContent } : msg
         ));
       } else {
-        const stream = await chat.sendMessageStream({ message: currentInput });
-        for await (const chunk of stream) {
-          const text = (chunk as GenerateContentResponse).text;
-          if (text) {
-            assistantContent += text;
-            setMessages(prev => prev.map(msg => 
-              msg.id === assistantMessageId ? { ...msg, content: assistantContent } : msg
-            ));
-          }
-        }
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            message: currentInput,
+            history: messages.map(m => ({
+              role: m.role === 'user' ? 'user' : 'model',
+              parts: [{ text: m.content }]
+            })),
+            systemInstruction: SYSTEM_INSTRUCTION
+          }),
+        });
+
+        if (!response.ok) throw new Error('Chat request failed');
+        const data = await response.json();
+        assistantContent = data.text || "";
+        
+        setMessages(prev => prev.map(msg => 
+          msg.id === assistantMessageId ? { ...msg, content: assistantContent } : msg
+        ));
       }
     } catch (error) {
-      console.error('Error calling Gemini:', error);
+      console.error('Error calling API:', error);
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
