@@ -10,9 +10,11 @@ app.use(express.json());
 
 // Helper to get genAI instance with current key
 const getGenAI = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not set in environment variables.");
+    console.error("CRITICAL: GEMINI_API_KEY is missing from process.env");
+    console.log("Available env keys:", Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('TOKEN') && !k.includes('KEY')));
+    throw new Error("GEMINI_API_KEY is not set in environment variables. Please check your Netlify settings and redeploy.");
   }
   return new GoogleGenAI({ apiKey });
 };
@@ -20,7 +22,8 @@ const getGenAI = () => {
 const getReplicate = () => {
   const auth = process.env.REPLICATE_API_TOKEN;
   if (!auth) {
-    throw new Error("REPLICATE_API_TOKEN is not set in environment variables.");
+    console.error("CRITICAL: REPLICATE_API_TOKEN is missing from process.env");
+    throw new Error("REPLICATE_API_TOKEN is not set in environment variables. Please check your Netlify settings and redeploy.");
   }
   return new Replicate({ auth });
 };
@@ -155,11 +158,17 @@ apiRouter.post("/tts", async (req, res) => {
 
 // Health check endpoint
 apiRouter.get("/health", (req, res) => {
+  const hasGeminiKey = !!(process.env.GEMINI_API_KEY || process.env.API_KEY);
+  const hasReplicateToken = !!process.env.REPLICATE_API_TOKEN;
+  
   res.json({ 
     status: "ok", 
+    message: "Muhenga AI Server is running",
     env: { 
-      hasGeminiKey: !!process.env.GEMINI_API_KEY,
-      hasReplicateToken: !!process.env.REPLICATE_API_TOKEN
+      hasGeminiKey,
+      hasReplicateToken,
+      nodeEnv: process.env.NODE_ENV,
+      availableKeys: Object.keys(process.env).filter(k => !k.includes('SECRET') && !k.includes('TOKEN') && !k.includes('KEY'))
     } 
   });
 });
