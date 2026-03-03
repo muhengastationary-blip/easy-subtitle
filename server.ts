@@ -10,7 +10,15 @@ app.use(express.json());
 
 // Helper to get genAI instance with current key
 const getGenAI = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  // Check standard environment variable first
+  let apiKey = process.env.GEMINI_API_KEY;
+  
+  // Fallback for misconfigured Netlify environment variables where the user
+  // mistakenly created variables named "Key" and "Value"
+  if (!apiKey && process.env.Key === 'GEMINI_API_KEY' && process.env.Value) {
+    apiKey = process.env.Value;
+  }
+  
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY is not set in environment variables.");
   }
@@ -158,7 +166,7 @@ apiRouter.get("/health", (req, res) => {
   res.json({ 
     status: "ok", 
     env: { 
-      hasGeminiKey: !!process.env.GEMINI_API_KEY,
+      hasGeminiKey: !!(process.env.GEMINI_API_KEY || (process.env.Key === 'GEMINI_API_KEY' && process.env.Value)),
       hasReplicateToken: !!process.env.REPLICATE_API_TOKEN
     } 
   });
