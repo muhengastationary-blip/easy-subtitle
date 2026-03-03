@@ -167,28 +167,7 @@ apiRouter.get("/health", (req, res) => {
 // Mount the API router
 app.use("/api", apiRouter);
 
-// For local dev in AI Studio
-if (process.env.NODE_ENV !== "production") {
-  async function setupVite() {
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-    
-    const PORT = 3000;
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-  }
-  setupVite();
-} else {
-  // Static serving for production (if not using Netlify Functions)
-  app.use(express.static("dist"));
-  
-  // Only listen if not being imported as a module (e.g., for Netlify)
-  // This is a bit tricky with ESM, but usually Netlify doesn't call listen()
-}
+// Vite local dev server removed for Netlify deployment
+
 
 export default app;
