@@ -184,6 +184,9 @@ export default function App() {
     }
 
     try {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error('GEMINI_API_KEY is missing.');
+      }
       setPlayingAudioId(message.id);
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const response = await ai.models.generateContent({
@@ -230,14 +233,19 @@ export default function App() {
     setMessages(prev => [...prev, userMessage]);
 
     try {
+      // Use absolute path for API calls to work with Netlify redirects
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
+
       const data = await response.json();
-      if (data.error) throw new Error(data.error);
 
       // Replicate output for stability-ai/stable-diffusion is usually an array of URLs
       const imageUrl = Array.isArray(data.output) ? data.output[0] : data.output;
@@ -297,6 +305,10 @@ export default function App() {
     setIsLoading(true);
 
     try {
+      if (!process.env.GEMINI_API_KEY) {
+        throw new Error('GEMINI_API_KEY is missing. Please set it in your environment variables.');
+      }
+      
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const chat = ai.chats.create({
         model: "gemini-3-flash-preview",

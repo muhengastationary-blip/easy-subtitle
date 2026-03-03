@@ -9,60 +9,67 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+const app = express();
+app.use(express.json());
 
-  app.use(express.json());
+// API route for image generation
+app.post("/api/generate", async (req, res) => {
+  const { prompt } = req.body;
 
-  // API route for image generation
-  app.post("/api/generate", async (req, res) => {
-    const { prompt } = req.body;
+  if (!prompt) {
+    return res.status(400).json({ error: "Prompt is required" });
+  }
 
-    if (!prompt) {
-      return res.status(400).json({ error: "Prompt is required" });
+  try {
+    if (!process.env.REPLICATE_API_TOKEN) {
+      throw new Error("REPLICATE_API_TOKEN is not set in environment variables.");
     }
 
-    try {
-      if (!process.env.REPLICATE_API_TOKEN) {
-        throw new Error("REPLICATE_API_TOKEN is not set in environment variables.");
+    console.log("Generating image for prompt:", prompt);
+    
+    const output = await replicate.run(
+      "stability-ai/stable-diffusion:ac732d83d0c1d7e7208199701ca2da4c0f551e20b93f1d4eba83e1a267e7d848",
+      {
+        input: {
+          prompt: prompt,
+        },
       }
+    );
 
-      console.log("Generating image for prompt:", prompt);
-      
-      // Using the model specified by the user: stability-ai/stable-diffusion
-      // Note: Replicate's API might return an array or a single string depending on the model version.
-      const output = await replicate.run(
-        "stability-ai/stable-diffusion:ac732d83d0c1d7e7208199701ca2da4c0f551e20b93f1d4eba83e1a267e7d848",
-        {
-          input: {
-            prompt: prompt,
-          },
-        }
-      );
+    console.log("Replicate output:", output);
+    res.json({ output });
+  } catch (error: any) {
+    console.error("Error generating image:", error);
+    res.status(500).json({ error: error.message || "Failed to generate image" });
+  }
+});
 
-      console.log("Replicate output:", output);
-      res.json({ output });
-    } catch (error: any) {
-      console.error("Error generating image:", error);
-      res.status(500).json({ error: error.message || "Failed to generate image" });
-    }
-  });
-
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+// For local dev in AI Studio
+if (process.env.NODE_ENV !== "production") {
+  async function setupVite() {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
-  } else {
-    app.use(express.static("dist"));
+    
+    const PORT = 3000;
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
   }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  setupVite();
+} else {
+  // Static serving for production (if not using Netlify Functions)
+  app.use(express.static("dist"));
+  
+  // Only listen if not being imported as a module (e.g., for Netlify)
+  if (import.meta.url === `file://${process.argv[1]}`) {
+      const PORT = 3000;
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+      });
+  }
 }
 
-startServer();
+export default app;
