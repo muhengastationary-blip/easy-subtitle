@@ -1,22 +1,35 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import Replicate from "replicate";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN,
-});
-
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-
 const app = express();
 app.use(express.json());
 
+// Helper to get genAI instance with current key
+const getGenAI = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not set in environment variables.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
+
+const getReplicate = () => {
+  const auth = process.env.REPLICATE_API_TOKEN;
+  if (!auth) {
+    throw new Error("REPLICATE_API_TOKEN is not set in environment variables.");
+  }
+  return new Replicate({ auth });
+};
+
+// Create a router for API routes
+const apiRouter = express.Router();
+
 // API route for image generation
-app.post("/api/generate", async (req, res) => {
+apiRouter.post("/generate", async (req, res) => {
   const { prompt } = req.body;
 
   if (!prompt) {
@@ -24,10 +37,7 @@ app.post("/api/generate", async (req, res) => {
   }
 
   try {
-    if (!process.env.REPLICATE_API_TOKEN) {
-      throw new Error("REPLICATE_API_TOKEN is not set in environment variables.");
-    }
-
+    const replicate = getReplicate();
     console.log("Generating image for prompt:", prompt);
     
     const output = await replicate.run(
@@ -39,7 +49,7 @@ app.post("/api/generate", async (req, res) => {
       }
     );
 
-    console.log("Replicate output:", output);
+    console.log("Replicate output success");
     res.json({ output });
   } catch (error: any) {
     console.error("Error generating image:", error);
@@ -48,7 +58,8 @@ app.post("/api/generate", async (req, res) => {
 });
 
 // API route for Gemini Chat
-app.post("/api/chat", async (req, res) => {
+apiRouter.post("/chat", async (req, res) => {
+  console.log("Received chat request:", req.body);
   const { message, history, systemInstruction } = req.body;
 
   if (!message) {
@@ -56,11 +67,7 @@ app.post("/api/chat", async (req, res) => {
   }
 
   try {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not set in environment variables.");
-    }
-
-    const model = genAI.models.get({ model: "gemini-3-flash-preview" });
+    const genAI = getGenAI();
     
     // Simple non-streaming implementation for stability in serverless
     const chat = genAI.chats.create({
@@ -72,6 +79,7 @@ app.post("/api/chat", async (req, res) => {
     });
 
     const result = await chat.sendMessage({ message });
+    console.log("Gemini response success");
     res.json({ text: result.text });
   } catch (error: any) {
     console.error("Error in Gemini Chat:", error);
@@ -80,7 +88,7 @@ app.post("/api/chat", async (req, res) => {
 });
 
 // API route for Gemini Multimodal (Image Analysis)
-app.post("/api/multimodal", async (req, res) => {
+apiRouter.post("/multimodal", async (req, res) => {
   const { message, image, systemInstruction } = req.body;
 
   if (!image) {
@@ -88,9 +96,7 @@ app.post("/api/multimodal", async (req, res) => {
   }
 
   try {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not set in environment variables.");
-    }
+    const genAI = getGenAI();
 
     const imagePart = {
       inlineData: {
@@ -114,17 +120,16 @@ app.post("/api/multimodal", async (req, res) => {
 });
 
 // API route for Gemini TTS
-app.post("/api/tts", async (req, res) => {
+apiRouter.post("/tts", async (req, res) => {
   const { text } = req.body;
+  console.log("Received TTS request for text length:", text?.length);
 
   if (!text) {
     return res.status(400).json({ error: "Text is required" });
   }
 
   try {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not set in environment variables.");
-    }
+    const genAI = getGenAI();
 
     const response = await genAI.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
@@ -140,6 +145,7 @@ app.post("/api/tts", async (req, res) => {
     });
 
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    console.log("Gemini TTS success");
     res.json({ audio: base64Audio });
   } catch (error: any) {
     console.error("Error in Gemini TTS:", error);
@@ -147,9 +153,24 @@ app.post("/api/tts", async (req, res) => {
   }
 });
 
+// Health check endpoint
+apiRouter.get("/health", (req, res) => {
+  res.json({ 
+    status: "ok", 
+    env: { 
+      hasGeminiKey: !!process.env.GEMINI_API_KEY,
+      hasReplicateToken: !!process.env.REPLICATE_API_TOKEN
+    } 
+  });
+});
+
+// Mount the API router
+app.use("/api", apiRouter);
+
 // For local dev in AI Studio
 if (process.env.NODE_ENV !== "production") {
   async function setupVite() {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -167,12 +188,7 @@ if (process.env.NODE_ENV !== "production") {
   app.use(express.static("dist"));
   
   // Only listen if not being imported as a module (e.g., for Netlify)
-  if (import.meta.url === `file://${process.argv[1]}`) {
-      const PORT = 3000;
-      app.listen(PORT, "0.0.0.0", () => {
-        console.log(`Server running on http://localhost:${PORT}`);
-      });
-  }
+  // This is a bit tricky with ESM, but usually Netlify doesn't call listen()
 }
 
 export default app;

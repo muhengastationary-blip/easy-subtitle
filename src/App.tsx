@@ -126,6 +126,23 @@ export default function App() {
     scrollToBottom();
   }, [messages, isLoading]);
 
+  // Health check on mount
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const response = await fetch('/api/health');
+        const data = await response.json();
+        console.log('Muhenga AI: Health check:', data);
+        if (!data.env?.hasGeminiKey) {
+          console.warn('Muhenga AI: GEMINI_API_KEY is missing on server!');
+        }
+      } catch (error) {
+        console.error('Muhenga AI: Health check failed:', error);
+      }
+    };
+    checkHealth();
+  }, []);
+
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
     if (textareaRef.current) {
@@ -192,7 +209,10 @@ export default function App() {
         body: JSON.stringify({ text: message.content }),
       });
 
-      if (!response.ok) throw new Error('TTS failed');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `TTS failed with status ${response.status}`);
+      }
       const data = await response.json();
       const base64Audio = data.audio;
 
@@ -319,7 +339,10 @@ export default function App() {
           }),
         });
 
-        if (!response.ok) throw new Error('Multimodal request failed');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Multimodal request failed with status ${response.status}`);
+        }
         const data = await response.json();
         assistantContent = data.text || "";
         
@@ -340,7 +363,10 @@ export default function App() {
           }),
         });
 
-        if (!response.ok) throw new Error('Chat request failed');
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `Chat request failed with status ${response.status}`);
+        }
         const data = await response.json();
         assistantContent = data.text || "";
         
@@ -348,12 +374,12 @@ export default function App() {
           msg.id === assistantMessageId ? { ...msg, content: assistantContent } : msg
         ));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error calling API:', error);
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         role: 'assistant',
-        content: 'I apologize, but I encountered an error. Please try again.',
+        content: `I apologize, but I encountered an error: ${error.message || 'Please try again.'}`,
         timestamp: new Date(),
       }]);
     } finally {
