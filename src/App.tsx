@@ -77,6 +77,8 @@ const MuhengaLogo = ({ className }: { className?: string }) => (
   </div>
 );
 
+console.log('Muhenga AI: App component loading...');
+
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -184,11 +186,12 @@ export default function App() {
     }
 
     try {
-      if (!process.env.GEMINI_API_KEY) {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
         throw new Error('GEMINI_API_KEY is missing.');
       }
       setPlayingAudioId(message.id);
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
         contents: [{ parts: [{ text: message.content }] }],
@@ -305,11 +308,12 @@ export default function App() {
     setIsLoading(true);
 
     try {
-      if (!process.env.GEMINI_API_KEY) {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
         throw new Error('GEMINI_API_KEY is missing. Please set it in your environment variables.');
       }
       
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       const chat = ai.chats.create({
         model: "gemini-3-flash-preview",
         config: {
