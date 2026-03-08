@@ -30,7 +30,16 @@ module EasySubtitle
     extend self
 
     def build(config : Config, log : Log) : SyncBackend
-      build(config.sync_backend, log)
+      case config.sync_backend.downcase
+      when "alass"
+        AlassRunner.new(log)
+      when "ffsubsync"
+        FfsubsyncRunner.new(log)
+      when "whisper"
+        WhisperRunner.new(config, log)
+      else
+        raise ConfigError.new("Unsupported sync_backend: #{config.sync_backend}")
+      end
     end
 
     def build(name : String, log : Log) : SyncBackend

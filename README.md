@@ -91,6 +91,8 @@ These external tools must be on your PATH:
 | [mkvtoolnix](https://mkvtoolnix.download/) | MKV track extraction/remuxing | `pacman -S mkvtoolnix-cli` / `brew install mkvtoolnix` / `apt install mkvtoolnix` |
 | [alass](https://github.com/kaegi/alass) | Default subtitle synchronization backend | `cargo install alass-cli` or download from releases |
 | [ffsubsync](https://github.com/smacke/ffsubsync) | Optional subtitle synchronization backend | `pipx install ffsubsync` or `pip install ffsubsync` |
+| [whisper.cpp](https://github.com/ggml-org/whisper.cpp) | AI-powered sync backend (uses ASR + alass) | `brew install whisper-cpp` or build from source |
+| [ffmpeg](https://ffmpeg.org/) | Audio extraction (required by whisper backend) | `pacman -S ffmpeg` / `brew install ffmpeg` / `apt install ffmpeg` |
 
 An [OpenSubtitles](https://www.opensubtitles.com/) account and API key are required for the `download` command.
 
@@ -178,6 +180,24 @@ Successful syncs are classified as either:
 
 When a final `video.lang.srt` already exists, `download`, `sync`, and `run` skip that language unless `resync_mode` is enabled.
 
+##### Sync backends
+
+| Backend | How it works | Best for |
+|---|---|---|
+| `alass` (default) | VAD-based dynamic programming alignment | Small offsets, fast |
+| `ffsubsync` | VAD cross-correlation | Small offsets, alternative |
+| `whisper` | Whisper ASR generates a reference SRT, then alass aligns against it | Large offsets (30-120s), anime, different release cuts |
+
+The `whisper` backend uses [whisper.cpp](https://github.com/ggml-org/whisper.cpp) to transcribe the audio into a reference subtitle file, then uses `alass` to align the downloaded subtitle against it. This handles large timing shifts that pure VAD approaches miss.
+
+Model selection (`whisper_model` in config):
+- `auto` (default): uses `base.en` for English-only audio, `small` for multilingual/anime
+- `base.en`: English-only, 142 MB, fast (~6 min per episode on CPU)
+- `small`: Multilingual with good Japanese support, 466 MB (~12 min per episode on CPU)
+- `medium` / `large-v3`: Higher accuracy, larger models
+
+Models are downloaded automatically on first use to `~/.cache/easy-subtitle/models/`.
+
 #### `run` — Full pipeline
 
 ```bash
@@ -251,7 +271,8 @@ reject_offset_threshold: 2.5
 # Behavior
 series_mode: false                # true = treat folder as TV series
 smart_sync: true                  # true = parallel all candidates, pick best
-sync_backend: "alass"             # "alass" or "ffsubsync"
+sync_backend: "alass"             # "alass", "ffsubsync", or "whisper"
+whisper_model: "auto"             # "auto", "base.en", "small", "medium", "large-v3"
 use_movie_hash: true              # true = hash search first (most accurate)
 last_resort_search: false         # true = unfiltered search when all else fails
 

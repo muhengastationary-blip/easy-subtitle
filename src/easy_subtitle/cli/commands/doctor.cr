@@ -24,6 +24,12 @@ module EasySubtitle
         check_tool("mkvextract", mkvtoolnix_install_help)
         check_sync_backend
 
+        if @config.sync_backend.downcase == "whisper"
+          check_tool("ffmpeg", ffmpeg_install_help)
+          check_alass_for_whisper
+          check_whisper_model
+        end
+
         puts "\n#{@passed}/#{@total} checks passed"
       end
 
@@ -104,6 +110,49 @@ module EasySubtitle
       private def detect_platform : String
         result = Shell.run("uname", ["-s"], raise_on_error: false)
         result.exit_code == 0 ? result.stdout.strip : "Unknown"
+      end
+
+      private def check_alass_for_whisper
+        WhisperRunner::ALASS_BINARY_NAMES.each do |name|
+          if path = Shell.which(name)
+            pass("alass (for whisper alignment) found: #{path}")
+            return
+          end
+        end
+        fail("alass not found (required by whisper backend)")
+        @log.info "  Install: cargo install alass-cli"
+      end
+
+      private def check_whisper_model
+        model_name = @config.whisper_model
+        if model_name == "auto"
+          all_english = @config.audio_track_languages.all? { |l| Language.normalize(l) == "en" }
+          model_name = all_english ? "base.en" : "small"
+        end
+
+        filename = WhisperRunner::MODELS[model_name]?
+        unless filename
+          fail("Unknown whisper_model: '#{@config.whisper_model}'")
+          return
+        end
+
+        model_path = WhisperRunner::MODEL_DIR / filename
+        if File.exists?(model_path.to_s)
+          pass("Whisper model '#{model_name}': #{model_path}")
+        else
+          skip("Whisper model '#{model_name}' not downloaded yet (will download on first sync)")
+        end
+      end
+
+      private def ffmpeg_install_help : String
+        case detect_platform
+        when "Linux"
+          "sudo apt install ffmpeg  OR  sudo pacman -S ffmpeg"
+        when "Darwin"
+          "brew install ffmpeg"
+        else
+          "https://ffmpeg.org/download.html"
+        end
       end
 
       private def mkvtoolnix_install_help : String

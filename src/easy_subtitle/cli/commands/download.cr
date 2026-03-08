@@ -1,7 +1,7 @@
 module EasySubtitle
   module CLI
     class DownloadCommand
-      def initialize(@config : Config, @log : Log)
+      def initialize(@config : Config, @log : Log, @extracted_finals : Set(String) = Set(String).new)
       end
 
       def run(args : Array(String)) : Nil
@@ -41,6 +41,11 @@ module EasySubtitle
             end
 
             languages.each do |lang|
+              if extracted_from_video?(video, lang)
+                @log.info "Skipping #{video.name} [#{lang}] - subtitle extracted from video"
+                next
+              end
+
               if final_subtitle_present?(video, lang)
                 @log.info "Skipping #{video.name} [#{lang}] - synchronized subtitle already exists"
                 next
@@ -91,6 +96,13 @@ module EasySubtitle
         end
 
         @log.success "Downloaded #{total_downloaded} subtitle(s)"
+      end
+
+      private def extracted_from_video?(video : VideoFile, lang : String) : Bool
+        return false if @extracted_finals.empty?
+
+        final = SubtitleFiles.final_path(video, lang)
+        @extracted_finals.includes?(final.to_s)
       end
 
       private def final_subtitle_present?(video : VideoFile, lang : String) : Bool

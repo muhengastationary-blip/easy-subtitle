@@ -1,7 +1,7 @@
 module EasySubtitle
   module CLI
     class SyncCommand
-      def initialize(@config : Config, @log : Log)
+      def initialize(@config : Config, @log : Log, @extracted_finals : Set(String) = Set(String).new)
       end
 
       def run(args : Array(String)) : Nil
@@ -36,6 +36,11 @@ module EasySubtitle
         videos.each do |video|
           languages.each do |lang|
             begin
+              if extracted_from_video?(video, lang)
+                @log.info "Skipping #{video.name} [#{lang}] - subtitle extracted from video"
+                next
+              end
+
               if final_subtitle_present?(video, lang)
                 @log.info "Skipping #{video.name} [#{lang}] - synchronized subtitle already exists"
                 next
@@ -85,6 +90,13 @@ module EasySubtitle
       rescue ex : File::Error
         @log.error "Failed to read #{dir}: #{ex.message}"
         [] of Path
+      end
+
+      private def extracted_from_video?(video : VideoFile, lang : String) : Bool
+        return false if @extracted_finals.empty?
+
+        final = SubtitleFiles.final_path(video, lang)
+        @extracted_finals.includes?(final.to_s)
       end
 
       private def final_subtitle_present?(video : VideoFile, lang : String) : Bool

@@ -37,6 +37,9 @@ module EasySubtitle
     @[YAML::Field(key: "sync_backend")]
     property sync_backend : String = "alass"
 
+    @[YAML::Field(key: "whisper_model")]
+    property whisper_model : String = "auto"
+
     @[YAML::Field(key: "use_movie_hash")]
     property use_movie_hash : Bool = true
 
@@ -134,8 +137,8 @@ module EasySubtitle
       if languages.empty?
         raise ConfigError.new("at least one language must be configured")
       end
-      unless {"alass", "ffsubsync"}.includes?(sync_backend.downcase)
-        raise ConfigError.new("sync_backend must be one of: alass, ffsubsync")
+      unless {"alass", "ffsubsync", "whisper"}.includes?(sync_backend.downcase)
+        raise ConfigError.new("sync_backend must be one of: alass, ffsubsync, whisper")
       end
     end
 
