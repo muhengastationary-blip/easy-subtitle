@@ -1,6 +1,6 @@
 module EasySubtitle
   class SmartSync
-    def initialize(@runner : AlassRunner, @config : Config, @log : Log)
+    def initialize(@runner : SyncBackend, @config : Config, @log : Log)
     end
 
     def execute(candidates : Array(Path), video : VideoFile) : SyncResult?

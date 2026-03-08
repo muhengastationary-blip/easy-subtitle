@@ -8,10 +8,10 @@ Subservient is a capable ~10,000-line Python tool with an interactive menu UI, f
 
 - **Single static binary** — no Python runtime, no pip, no virtualenv
 - **Subcommand CLI** — scriptable, composable, no interactive menus
-- **alass sync engine** — Rust-based, replaces ffsubsync (no Python dependency)
+- **Pluggable sync backend** — `alass` by default, optional `ffsubsync` backend support
 - **YAML config** — simpler than INI, with sensible defaults
 - **Parallel sync** — Crystal fibers for concurrent subtitle synchronization
-- **Zero runtime dependencies** — just the binary + `mkvtoolnix` and `alass` on your PATH
+- **Low runtime dependencies** — just the binary + `mkvtoolnix` and your configured sync backend on your PATH
 
 ## Installation
 
@@ -89,9 +89,31 @@ These external tools must be on your PATH:
 | Tool | Purpose | Install |
 |---|---|---|
 | [mkvtoolnix](https://mkvtoolnix.download/) | MKV track extraction/remuxing | `pacman -S mkvtoolnix-cli` / `brew install mkvtoolnix` / `apt install mkvtoolnix` |
-| [alass](https://github.com/kaegi/alass) | Subtitle synchronization | `cargo install alass-cli` or download from releases |
+| [alass](https://github.com/kaegi/alass) | Default subtitle synchronization backend | `cargo install alass-cli` or download from releases |
+| [ffsubsync](https://github.com/smacke/ffsubsync) | Optional subtitle synchronization backend | `pipx install ffsubsync` or `pip install ffsubsync` |
 
 An [OpenSubtitles](https://www.opensubtitles.com/) account and API key are required for the `download` command.
+
+### OpenSubtitles Quotas
+
+OpenSubtitles enforces account and API download limits. When you hit that limit, the `download` phase will fail with HTTP `406` and a message like:
+
+```text
+You have downloaded your allowed 20 subtitles for 24h.
+```
+
+That limit is not controlled by `easy-subtitle`. It depends on your OpenSubtitles account tier and API plan.
+
+- Free accounts can have a small daily subtitle quota.
+- Higher tiers such as VIP and paid API plans raise that quota.
+- `easy-subtitle` now stops further candidate downloads for that language as soon as OpenSubtitles reports a quota/account restriction, instead of wasting more requests.
+
+To make your quota last longer:
+
+- Keep `top_downloads` low. `2` or `3` is usually enough.
+- Keep `max_search_results` reasonable instead of pulling large candidate lists.
+- Leave `resync_mode` off unless you really want to replace existing final subtitles.
+- Remember that `smart_sync` tests more downloaded candidates, which improves selection quality but consumes more quota.
 
 ## Usage
 
@@ -136,21 +158,23 @@ easy-subtitle download -l en,pt /path/to/movies
 
 Searches OpenSubtitles using movie hash (most accurate) and text search (fallback), then downloads the top candidates.
 
+If OpenSubtitles returns HTTP `406`, the most common cause is an exhausted daily quota or account restriction. The command now shows the API message so you can tell the difference between a quota problem and a bad candidate.
+
 #### `sync` — Synchronize subtitles with video
 
 ```bash
 easy-subtitle sync /path/to/movies
 ```
 
-Uses `alass` to synchronize downloaded subtitle files with the video. Supports two strategies:
+Uses the configured sync backend to synchronize downloaded subtitle files with the video. Supports two strategies:
 
-- **Smart sync** (default): runs all candidates in parallel, keeps the most-downloaded subtitle that `alass` synchronizes successfully
-- **First match**: stops at the first subtitle that `alass` synchronizes successfully
+- **Smart sync** (default): runs all candidates in parallel, keeps the most-downloaded subtitle that the backend synchronizes successfully
+- **First match**: stops at the first subtitle that the backend synchronizes successfully
 
 Successful syncs are classified as either:
 
-- **Accepted**: `alass` completed without warning signals
-- **Drift**: `alass` completed but emitted warnings that suggest the subtitle should be reviewed
+- **Accepted**: the backend completed without warning signals
+- **Drift**: the backend completed but emitted warnings that suggest the subtitle should be reviewed
 
 When a final `video.lang.srt` already exists, `download`, `sync`, and `run` skip that language unless `resync_mode` is enabled.
 
@@ -197,7 +221,7 @@ Computes the OpenSubtitles 64-bit movie hash. Useful for debugging search result
 easy-subtitle doctor
 ```
 
-Validates your setup: checks config file, API credentials, tests API login, and verifies external tool dependencies (`mkvmerge`, `mkvextract`, `alass`) are installed. Shows platform-specific install instructions for any missing tools.
+Validates your setup: checks config file, API credentials, tests API login, and verifies external tool dependencies (`mkvmerge`, `mkvextract`, and the configured sync backend) are installed. Shows platform-specific install instructions for any missing tools.
 
 ## Configuration
 
@@ -220,13 +244,14 @@ audio_track_languages:
   - ja
 
 # Legacy sync thresholds from Subservient (kept for config compatibility)
-# The current alass-based sync flow no longer rejects successful syncs on this basis.
+# The current sync flow no longer rejects successful backend runs on this basis.
 accept_offset_threshold: 0.101
 reject_offset_threshold: 2.5
 
 # Behavior
 series_mode: false                # true = treat folder as TV series
 smart_sync: true                  # true = parallel all candidates, pick best
+sync_backend: "alass"             # "alass" or "ffsubsync"
 use_movie_hash: true              # true = hash search first (most accurate)
 last_resort_search: false         # true = unfiltered search when all else fails
 
@@ -237,7 +262,7 @@ resync_mode: false                # true = re-sync even if subtitles exist
 
 # Download limits
 max_search_results: 10
-top_downloads: 3
+top_downloads: 3                 # keep low if you want to conserve OpenSubtitles quota
 download_retry_503: 6
 ```
 
@@ -250,13 +275,13 @@ easy-subtitle/
     core/          # Language maps, SRT parser/writer/cleaner, video scanner
     acquisition/   # OpenSubtitles API client, auth, search, download, movie hash
     extraction/    # MKV track parsing, extraction, remuxing
-    synchronization/  # alass runner, offset calculator, smart/first-match strategies
+    synchronization/  # sync backends, offset calculator, smart/first-match strategies
     models/        # VideoFile, SubtitleCandidate, CoverageEntry
 ```
 
 Key design choices:
 
-- **Crystal fibers** for parallel smart-sync (spawn N alass processes, collect via Channel)
+- **Crystal fibers** for parallel smart-sync (spawn N backend processes, collect via Channel)
 - **Rate-limited API client** (500ms throttle via Mutex, required by OpenSubtitles)
 - **YAML::Serializable** config with validation and sensible defaults
 - **Zero external shards** for production (only `webmock` for tests)
@@ -267,7 +292,7 @@ Key design choices:
 |---|---|---|
 | Runtime | Python 3 + pip packages | Single binary |
 | UI | Interactive menu | Subcommand CLI |
-| Sync engine | ffsubsync (Python) | alass (Rust) |
+| Sync engine | ffsubsync (Python) | alass by default, optional ffsubsync backend |
 | Config | INI (.config) | YAML |
 | Concurrency | ThreadPoolExecutor | Crystal fibers + channels |
 | Hash algorithm | Same (OpenSubtitles 64-bit) | Same |

@@ -9,6 +9,7 @@ describe EasySubtitle::Config do
       config.accept_offset_threshold.should eq 0.101
       config.reject_offset_threshold.should eq 2.5
       config.smart_sync.should be_true
+      config.sync_backend.should eq "alass"
       config.use_movie_hash.should be_true
       config.max_search_results.should eq 10
       config.top_downloads.should eq 3
@@ -25,6 +26,7 @@ describe EasySubtitle::Config do
       config.audio_track_languages.should eq ["en", "nl", "ja"]
       config.series_mode.should be_false
       config.smart_sync.should be_true
+      config.sync_backend.should eq "alass"
     end
 
     it "loads minimal config with defaults" do
@@ -74,6 +76,14 @@ describe EasySubtitle::Config do
       config = EasySubtitle::Config.default
       config.languages = [] of String
       expect_raises(EasySubtitle::ConfigError, /language/) do
+        config.validate!
+      end
+    end
+
+    it "rejects unsupported sync_backend values" do
+      config = EasySubtitle::Config.default
+      config.sync_backend = "unknown"
+      expect_raises(EasySubtitle::ConfigError, /sync_backend/) do
         config.validate!
       end
     end

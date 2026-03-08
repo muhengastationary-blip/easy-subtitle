@@ -1,7 +1,7 @@
 module EasySubtitle
   class Syncer
-    def initialize(@config : Config, @log : Log, runner : AlassRunner? = nil)
-      @runner = runner || AlassRunner.new(@log)
+    def initialize(@config : Config, @log : Log, runner : SyncBackend? = nil)
+      @runner = runner || SyncBackendFactory.build(@config, @log)
     end
 
     def sync(video : VideoFile, candidates : Array(Path), language : String) : SyncResult?
@@ -22,13 +22,13 @@ module EasySubtitle
         saved = finalize_result(result, video, language)
         if saved
           delete_candidate_files(candidates)
-          cleanup_marked_candidates(video, language)
+          SubtitleCache.clear(video, language)
         elsif result.failed?
-          mark_candidates(candidates, SyncStatus::Failed)
+          cache_candidates(candidates, video, language, SyncStatus::Failed)
         end
       else
         if result.nil? || result.status.failed?
-          mark_candidates(candidates, SyncStatus::Failed)
+          cache_candidates(candidates, video, language, SyncStatus::Failed)
         end
         cleanup_temp_files(video.directory)
       end
@@ -73,28 +73,11 @@ module EasySubtitle
       # Ignore candidate cleanup errors
     end
 
-    private def mark_candidates(candidates : Array(Path), status : SyncStatus) : Nil
+    private def cache_candidates(candidates : Array(Path), video : VideoFile, language : String, status : SyncStatus) : Nil
       candidates.each do |candidate|
         next unless File.exists?(candidate.to_s)
 
-        marked_path = SubtitleFiles.mark(candidate, status)
-        if File.exists?(marked_path.to_s)
-          File.delete(candidate.to_s)
-        else
-          File.rename(candidate.to_s, marked_path.to_s)
-        end
-      end
-    rescue
-      # Ignore marker cleanup errors
-    end
-
-    private def cleanup_marked_candidates(video : VideoFile, language : String) : Nil
-      Dir.each_child(video.directory.to_s) do |name|
-        next unless name.starts_with?("#{video.stem}.#{language}.")
-        next unless SubtitleFiles.marked_candidate?(name)
-
-        path = video.directory / name
-        File.delete(path.to_s) if File.file?(path.to_s)
+        SubtitleCache.move_candidate(candidate, video, language, status)
       end
     rescue
       # Ignore marker cleanup errors

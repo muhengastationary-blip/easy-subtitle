@@ -1,9 +1,9 @@
 module EasySubtitle
-  class AlassRunner < SyncBackend
-    BINARY_NAMES = ["alass", "alass-cli"]
+  class FfsubsyncRunner < SyncBackend
+    BINARY_NAMES = ["ffsubsync"]
 
     def name : String
-      "alass"
+      "ffsubsync"
     end
 
     def binary_names : Array(String)
@@ -11,7 +11,7 @@ module EasySubtitle
     end
 
     def install_help : String
-      "cargo install alass-cli  OR  https://github.com/kaegi/alass/releases"
+      "pipx install ffsubsync  OR  pip install ffsubsync"
     end
 
     def sync(video_path : Path, sub_in : Path, sub_out : Path) : ShellResult
@@ -20,7 +20,7 @@ module EasySubtitle
       Spinner.run("Syncing #{sub_in.basename}") do
         Shell.run(
           cmd,
-          [video_path.to_s, sub_in.to_s, sub_out.to_s],
+          [video_path.to_s, "-i", sub_in.to_s, "-o", sub_out.to_s],
           raise_on_error: false,
           timeout: @timeout
         )

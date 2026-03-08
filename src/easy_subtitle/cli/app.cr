@@ -135,7 +135,7 @@ module EasySubtitle
         puts "  init        Generate default config file"
         puts "  extract     Extract subtitle tracks from MKV containers"
         puts "  download    Search & download subtitles from OpenSubtitles"
-        puts "  sync        Synchronize subtitles with video using alass"
+        puts "  sync        Synchronize subtitles with video using the configured backend"
         puts "  run         Full pipeline: extract -> download -> sync"
         puts "  clean       Remove ads/watermarks from SRT files"
         puts "  scan        Report subtitle coverage for videos"

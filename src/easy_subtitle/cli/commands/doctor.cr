@@ -22,7 +22,7 @@ module EasySubtitle
         check_api_login
         check_tool("mkvmerge", mkvtoolnix_install_help)
         check_tool("mkvextract", mkvtoolnix_install_help)
-        check_alass
+        check_sync_backend
 
         puts "\n#{@passed}/#{@total} checks passed"
       end
@@ -88,15 +88,17 @@ module EasySubtitle
         end
       end
 
-      private def check_alass
-        AlassRunner::BINARY_NAMES.each do |name|
-          if path = Shell.which(name)
-            pass("#{name} found: #{path}")
+      private def check_sync_backend
+        backend = SyncBackendFactory.build(@config, @log)
+        backend.binary_names.each do |binary_name|
+          if path = Shell.which(binary_name)
+            pass("#{backend.name} backend found: #{path}")
             return
           end
         end
-        fail("alass not found (tried: #{AlassRunner::BINARY_NAMES.join(", ")})")
-        @log.info "  Install: #{alass_install_help}"
+
+        fail("#{backend.name} backend not found (tried: #{backend.binary_names.join(", ")})")
+        @log.info "  Install: #{backend.install_help}"
       end
 
       private def detect_platform : String
@@ -113,10 +115,6 @@ module EasySubtitle
         else
           "https://mkvtoolnix.download/downloads.html"
         end
-      end
-
-      private def alass_install_help : String
-        "cargo install alass-cli  OR  https://github.com/kaegi/alass/releases"
       end
 
       private def pass(msg : String)

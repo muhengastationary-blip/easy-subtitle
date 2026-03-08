@@ -1,8 +1,20 @@
 require "../../spec_helper"
 
-class AlwaysFailingRunner < EasySubtitle::AlassRunner
+class AlwaysFailingRunner < EasySubtitle::SyncBackend
   def initialize(log : EasySubtitle::Log)
     super(log)
+  end
+
+  def name : String
+    "always-failing"
+  end
+
+  def binary_names : Array(String)
+    ["always-failing"]
+  end
+
+  def install_help : String
+    "n/a"
   end
 
   def sync(video_path : Path, sub_in : Path, sub_out : Path) : EasySubtitle::ShellResult
@@ -16,7 +28,7 @@ describe EasySubtitle::CLI::App do
     app.should_not be_nil
   end
 
-  it "marks failed numbered subtitle candidates after sync" do
+  it "moves failed numbered subtitle candidates into the centralized cache" do
     dir = Path.new("/tmp/easy-subtitle-sync-cleanup")
     Dir.mkdir_p(dir.to_s)
 
@@ -35,9 +47,11 @@ describe EasySubtitle::CLI::App do
     result = syncer.sync(video, [c1, c2], "en")
     result.should_not be_nil
     result.not_nil!.status.failed?.should be_true
-    File.exists?((dir / "movie.en.d100.f1.FAILED.srt").to_s).should be_true
-    File.exists?((dir / "movie.en.d200.f2.FAILED.srt").to_s).should be_true
+    File.exists?(c1.to_s).should be_false
+    File.exists?(c2.to_s).should be_false
+    EasySubtitle::SubtitleCache.cached_candidate_file_ids(video, "en").should eq Set{1_i64, 2_i64}
   ensure
+    EasySubtitle::SubtitleCache.clear(video, "en") if video
     FileUtils.rm_rf(dir.to_s) if dir
   end
 end

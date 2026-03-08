@@ -24,3 +24,27 @@ describe EasySubtitle::SubtitleFiles do
     EasySubtitle::SubtitleFiles.mark(path, EasySubtitle::SyncStatus::Failed).basename.should eq "movie.en.d123.f456.FAILED.srt"
   end
 end
+
+describe EasySubtitle::SubtitleCache do
+  it "moves failed candidates into the centralized cache" do
+    dir = Path.new("/tmp/easy-subtitle-cache-spec")
+    Dir.mkdir_p(dir.to_s)
+
+    video_path = dir / "movie.mkv"
+    candidate = dir / "movie.en.d123.f456.srt"
+
+    File.write(video_path.to_s, "video")
+    File.write(candidate.to_s, "1\n00:00:01,000 --> 00:00:02,000\nhi\n")
+
+    video = EasySubtitle::VideoFile.from_path(video_path)
+    cached = EasySubtitle::SubtitleCache.move_candidate(candidate, video, "en", EasySubtitle::SyncStatus::Failed)
+
+    File.exists?(candidate.to_s).should be_false
+    cached.basename.should eq "movie.en.d123.f456.FAILED.srt"
+    File.exists?(cached.to_s).should be_true
+    EasySubtitle::SubtitleCache.cached_candidate_file_ids(video, "en").should contain 456_i64
+  ensure
+    EasySubtitle::SubtitleCache.clear(video, "en") if video
+    FileUtils.rm_rf(dir.to_s) if dir
+  end
+end

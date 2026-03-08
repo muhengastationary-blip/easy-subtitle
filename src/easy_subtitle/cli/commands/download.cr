@@ -73,10 +73,14 @@ module EasySubtitle
                 output_name = "#{video.stem}.#{lang}.d#{candidate.download_count}.f#{candidate.file_id}.srt"
                 output_path = output_dir / output_name
 
-                if downloader.download(candidate, output_path)
+                result = downloader.download(candidate, output_path)
+                if result.success?
                   @log.success "Downloaded: #{output_name}"
                   existing_file_ids << candidate.file_id
                   count += 1
+                elsif result.halt?
+                  @log.warn "Stopping download attempts for #{video.name} [#{lang}] due to an API limit or account restriction"
+                  break
                 end
               end
               total_downloaded += count
@@ -107,7 +111,7 @@ module EasySubtitle
       end
 
       private def existing_candidate_file_ids(video : VideoFile, lang : String) : Set(Int64)
-        ids = Set(Int64).new
+        ids = SubtitleCache.cached_candidate_file_ids(video, lang)
 
         Dir.each_child(video.directory.to_s) do |name|
           next unless name.starts_with?("#{video.stem}.#{lang}.")

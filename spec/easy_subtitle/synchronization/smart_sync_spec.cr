@@ -1,8 +1,20 @@
 require "../../spec_helper"
 
-class FailingRunner < EasySubtitle::AlassRunner
+class FailingRunner < EasySubtitle::SyncBackend
   def initialize(log : EasySubtitle::Log)
     super(log)
+  end
+
+  def name : String
+    "failing"
+  end
+
+  def binary_names : Array(String)
+    ["failing"]
+  end
+
+  def install_help : String
+    "n/a"
   end
 
   def sync(video_path : Path, sub_in : Path, sub_out : Path) : EasySubtitle::ShellResult
@@ -10,9 +22,21 @@ class FailingRunner < EasySubtitle::AlassRunner
   end
 end
 
-class CopyingRunner < EasySubtitle::AlassRunner
+class CopyingRunner < EasySubtitle::SyncBackend
   def initialize(log : EasySubtitle::Log)
     super(log)
+  end
+
+  def name : String
+    "copying"
+  end
+
+  def binary_names : Array(String)
+    ["copying"]
+  end
+
+  def install_help : String
+    "n/a"
   end
 
   def sync(video_path : Path, sub_in : Path, sub_out : Path) : EasySubtitle::ShellResult
@@ -21,9 +45,21 @@ class CopyingRunner < EasySubtitle::AlassRunner
   end
 end
 
-class ShiftingRunner < EasySubtitle::AlassRunner
+class ShiftingRunner < EasySubtitle::SyncBackend
   def initialize(log : EasySubtitle::Log)
     super(log)
+  end
+
+  def name : String
+    "shifting"
+  end
+
+  def binary_names : Array(String)
+    ["shifting"]
+  end
+
+  def install_help : String
+    "n/a"
   end
 
   def sync(video_path : Path, sub_in : Path, sub_out : Path) : EasySubtitle::ShellResult
@@ -39,9 +75,21 @@ class ShiftingRunner < EasySubtitle::AlassRunner
   end
 end
 
-class WarningRunner < EasySubtitle::AlassRunner
+class WarningRunner < EasySubtitle::SyncBackend
   def initialize(log : EasySubtitle::Log)
     super(log)
+  end
+
+  def name : String
+    "warning"
+  end
+
+  def binary_names : Array(String)
+    ["warning"]
+  end
+
+  def install_help : String
+    "n/a"
   end
 
   def sync(video_path : Path, sub_in : Path, sub_out : Path) : EasySubtitle::ShellResult
