@@ -5,9 +5,8 @@
 *.dwarf
 *.o
 
-# Libraries don't need dependency lock
-# Applications should uncomment this:
-/shard.lock
+# Applications should commit shard.lock
+# /shard.lock
 
 # Editor files
 *.swp
