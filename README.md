@@ -27,22 +27,7 @@ brew install akitaonrails/tap/easy-subtitle
 curl -fsSL https://raw.githubusercontent.com/akitaonrails/easy-subtitle/master/install.sh | bash
 ```
 
-Linux release binaries are built on Ubuntu and are dynamically linked.
-
-If your system is missing the runtime libraries, install them first:
-
-Ubuntu / Debian:
-
-```bash
-sudo apt-get update
-sudo apt-get install -y zlib1g libyaml-0-2 libssl3
-```
-
-Arch Linux:
-
-```bash
-sudo pacman -S --needed zlib libyaml openssl
-```
+Linux release binaries are built as static musl binaries so they can run on both Ubuntu and Arch without extra runtime libraries.
 
 ### From GitHub Releases
 
@@ -74,9 +59,20 @@ sudo pacman -S --needed zlib libyaml openssl pcre2
 
 That is enough for a normal Linux build on Arch.
 
-If you want a fully static Linux binary, you also need static archives for those libraries.
+If you want a fully static Linux binary from source, build it in a musl environment instead of trying to statically link against your host glibc stack. The release workflow does this with the official Alpine-based Crystal image.
 
-Ubuntu / Debian can provide them through the `-dev` packages above. Arch is different. On a typical Arch install, `pcre2` ships `.a` files, but `zlib`, `libyaml`, and `openssl` often do not. That means `crystal build --static` can still fail even when the packages above are already installed. On Arch, use a normal non-static local build unless you are prepared to provide those missing static libraries yourself.
+Example:
+
+```bash
+docker run --rm \
+  --user "$(id -u):$(id -g)" \
+  --volume "$PWD:/work" \
+  --workdir /work \
+  crystallang/crystal:latest-alpine \
+  sh -lc 'shards install --production && crystal build src/easy_subtitle.cr -o easy-subtitle --release --no-debug --static'
+```
+
+That static musl binary is the one intended to be portable across Ubuntu and Arch.
 
 ```bash
 git clone https://github.com/akitaonrails/easy-subtitle.git

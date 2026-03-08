@@ -25,19 +25,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: crystal-lang/install-crystal@v1
-        with:
-          crystal: latest
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y zlib1g-dev libyaml-dev libssl-dev libpcre2-dev
 
       - name: Build release binary
         run: |
-          shards install --production
-          crystal build src/easy_subtitle.cr -o easy-subtitle --release --no-debug
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --volume "$PWD:/work" \
+            --workdir /work \
+            crystallang/crystal:latest-alpine \
+            sh -lc 'shards install --production && crystal build src/easy_subtitle.cr -o easy-subtitle --release --no-debug --static'
           strip easy-subtitle
 
       - name: Package

@@ -105,9 +105,3 @@ echo "  ${BINARY} init              # generate config"
 echo "  ${BINARY} --help            # see all commands"
 echo ""
 info "Prerequisites: mkvtoolnix and alass must be on your PATH"
-
-if [ "$OS" = "Linux" ]; then
-  warn "Linux builds also require system runtime libraries."
-  warn "Ubuntu/Debian: sudo apt-get install -y zlib1g libyaml-0-2 libssl3"
-  warn "Arch Linux:    sudo pacman -S --needed zlib libyaml openssl"
-fi
