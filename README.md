@@ -144,8 +144,8 @@ easy-subtitle sync /path/to/movies
 
 Uses `alass` to synchronize downloaded subtitle files with the video. Supports two strategies:
 
-- **Smart sync** (default): runs all candidates in parallel, picks the one with the lowest timing offset
-- **First match**: stops at the first subtitle that syncs within the acceptance threshold
+- **Smart sync** (default): runs all candidates in parallel, keeps the most-downloaded subtitle that `alass` synchronizes successfully
+- **First match**: stops at the first subtitle that `alass` synchronizes successfully
 
 #### `run` — Full pipeline
 
@@ -212,9 +212,9 @@ audio_track_languages:
   - en
   - ja
 
-# Sync thresholds (in seconds)
-accept_offset_threshold: 0.101   # below this = accepted
-reject_offset_threshold: 2.5     # above this = rejected
+# Legacy sync thresholds from Subservient (kept for config compatibility)
+accept_offset_threshold: 0.101
+reject_offset_threshold: 2.5
 
 # Behavior
 series_mode: false                # true = treat folder as TV series

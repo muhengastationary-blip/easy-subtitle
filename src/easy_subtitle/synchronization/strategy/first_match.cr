@@ -12,7 +12,7 @@ module EasySubtitle
         result = sync_one(candidate, video)
 
         if result.accepted?
-          @log.success "First match accepted: #{candidate.basename} (offset: #{result.offset.round(3)}s)"
+          @log.success "First match accepted: #{candidate.basename} (timing shift: #{result.offset.round(3)}s)"
           return result
         end
 
@@ -24,7 +24,7 @@ module EasySubtitle
       end
 
       if drift = best_drift
-        @log.warn "No perfect match, best drift: #{drift.candidate_path.basename} (offset: #{drift.offset.round(3)}s)"
+        @log.warn "No perfect match, best drift: #{drift.candidate_path.basename} (timing shift: #{drift.offset.round(3)}s)"
         return drift
       end
 
@@ -46,14 +46,13 @@ module EasySubtitle
         )
       end
 
-      offset = OffsetCalculator.calculate(candidate, output_path)
-      status = classify_offset(offset)
+      offset = measure_timing_shift(candidate, output_path)
 
       SyncResult.new(
         candidate_path: candidate,
         output_path: output_path,
         offset: offset,
-        status: status,
+        status: SyncStatus::Accepted,
         alass_output: shell_result.stdout,
       )
     rescue ex : Exception
@@ -64,14 +63,10 @@ module EasySubtitle
       )
     end
 
-    private def classify_offset(offset : Float64) : SyncStatus
-      if offset <= @config.accept_offset_threshold
-        SyncStatus::Accepted
-      elsif offset <= @config.reject_offset_threshold
-        SyncStatus::Drift
-      else
-        SyncStatus::Failed
-      end
+    private def measure_timing_shift(candidate : Path, output_path : Path) : Float64
+      OffsetCalculator.calculate(candidate, output_path)
+    rescue
+      0.0
     end
   end
 end

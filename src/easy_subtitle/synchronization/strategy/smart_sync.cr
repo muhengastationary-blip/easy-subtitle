@@ -30,16 +30,14 @@ module EasySubtitle
 
       @log.info "Smart sync: #{results.count(&.accepted?)} accepted, #{results.count(&.status.drift?)} drift, #{results.count(&.status.failed?)} failed"
 
-      # Pick the accepted result with lowest offset
       accepted = results.select(&.accepted?)
       if accepted.empty?
-        # Fall back to drift results sorted by offset
-        drift = results.select(&.status.drift?).sort_by(&.offset)
-        return drift.first? if drift.any?
+        drift = results.select(&.status.drift?)
+        return best_result(drift) if drift.any?
         return results.first?
       end
 
-      accepted.min_by(&.offset)
+      best_result(accepted)
     end
 
     private def sync_one(candidate : Path, video : VideoFile) : SyncResult
@@ -56,14 +54,13 @@ module EasySubtitle
         )
       end
 
-      offset = OffsetCalculator.calculate(candidate, output_path)
-      status = classify_offset(offset)
+      offset = measure_timing_shift(candidate, output_path)
 
       SyncResult.new(
         candidate_path: candidate,
         output_path: output_path,
         offset: offset,
-        status: status,
+        status: SyncStatus::Accepted,
         alass_output: shell_result.stdout,
       )
     rescue ex : Exception
@@ -74,13 +71,26 @@ module EasySubtitle
       )
     end
 
-    private def classify_offset(offset : Float64) : SyncStatus
-      if offset <= @config.accept_offset_threshold
-        SyncStatus::Accepted
-      elsif offset <= @config.reject_offset_threshold
-        SyncStatus::Drift
+    private def measure_timing_shift(candidate : Path, output_path : Path) : Float64
+      OffsetCalculator.calculate(candidate, output_path)
+    rescue
+      0.0
+    end
+
+    private def best_result(results : Array(SyncResult)) : SyncResult
+      results.max_by do |result|
+        {
+          candidate_download_count(result.candidate_path),
+          -result.offset,
+        }
+      end
+    end
+
+    private def candidate_download_count(path : Path) : Int64
+      if match = /\.d(\d+)\./.match(path.basename)
+        match[1].to_i64
       else
-        SyncStatus::Failed
+        0_i64
       end
     end
   end

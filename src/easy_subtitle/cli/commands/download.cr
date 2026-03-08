@@ -50,7 +50,7 @@ module EasySubtitle
               count = 0
               candidates.first(@config.top_downloads).each do |candidate|
                 output_dir = video.directory
-                output_name = "#{video.stem}.#{lang}.#{candidate.file_id}.srt"
+                output_name = "#{video.stem}.#{lang}.d#{candidate.download_count}.f#{candidate.file_id}.srt"
                 output_path = output_dir / output_name
 
                 if downloader.download(candidate, output_path)

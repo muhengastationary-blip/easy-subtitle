@@ -26,7 +26,7 @@ module EasySubtitle
     end
 
     def to_s(io : IO) : Nil
-      io << "#{candidate_path.basename}: #{status} (offset: #{offset.round(3)}s)"
+      io << "#{candidate_path.basename}: #{status} (timing shift: #{offset.round(3)}s)"
     end
   end
 end

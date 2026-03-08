@@ -1,7 +1,7 @@
 module EasySubtitle
   class Syncer
-    def initialize(@config : Config, @log : Log)
-      @runner = AlassRunner.new(@log)
+    def initialize(@config : Config, @log : Log, runner : AlassRunner? = nil)
+      @runner = runner || AlassRunner.new(@log)
     end
 
     def sync(video : VideoFile, candidates : Array(Path), language : String) : SyncResult?
@@ -19,15 +19,19 @@ module EasySubtitle
                end
 
       if result && result.output_path
-        finalize_result(result, video, language)
+        saved = finalize_result(result, video, language)
+        delete_candidate_files(candidates) if saved || result.status.failed?
+      else
+        delete_candidate_files(candidates) if result.nil? || result.status.failed?
+        cleanup_temp_files(video.directory)
       end
 
       result
     end
 
-    private def finalize_result(result : SyncResult, video : VideoFile, language : String) : Nil
+    private def finalize_result(result : SyncResult, video : VideoFile, language : String) : Bool
       output = result.output_path
-      return unless output
+      return false unless output
 
       final_name = "#{video.stem}.#{language}.srt"
       final_path = video.directory / final_name
@@ -35,14 +39,26 @@ module EasySubtitle
       if result.accepted? || result.status.drift?
         begin
           File.rename(output.to_s, final_path.to_s)
-          @log.success "Saved: #{final_name} (offset: #{result.offset.round(3)}s, status: #{result.status})"
+          @log.success "Saved: #{final_name} (timing shift: #{result.offset.round(3)}s, status: #{result.status})"
+          cleanup_temp_files(video.directory)
+          true
         rescue ex
           @log.error "Failed to rename #{output.basename}: #{ex.message}"
+          cleanup_temp_files(video.directory)
+          false
         end
+      else
+        cleanup_temp_files(video.directory)
+        false
       end
+    end
 
-      # Cleanup temp files for other candidates
-      cleanup_temp_files(video.directory)
+    private def delete_candidate_files(candidates : Array(Path)) : Nil
+      candidates.each do |candidate|
+        File.delete(candidate.to_s) if File.exists?(candidate.to_s)
+      end
+    rescue
+      # Ignore candidate cleanup errors
     end
 
     private def cleanup_temp_files(dir : Path) : Nil
