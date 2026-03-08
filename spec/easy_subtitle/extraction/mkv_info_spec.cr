@@ -41,6 +41,32 @@ describe EasySubtitle::MkvInfo do
         EasySubtitle::MkvInfo.parse("{not json")
       end
     end
+
+    it "ignores oversized unsigned integers in fields it does not use" do
+      json = <<-JSON
+      {
+        "tracks": [
+          {
+            "id": 3,
+            "type": "subtitles",
+            "codec": "SubRip/SRT",
+            "properties": {
+              "language": "eng",
+              "track_name": "English",
+              "default_track": true,
+              "forced_track": false,
+              "codec_id": "S_TEXT/UTF8",
+              "uid": 15479490362815511006
+            }
+          }
+        ]
+      }
+      JSON
+
+      info = EasySubtitle::MkvInfo.parse(json)
+      info[:subtitle_tracks].size.should eq 1
+      info[:subtitle_tracks][0].id.should eq 3
+    end
   end
 
   describe "SubtitleTrack" do

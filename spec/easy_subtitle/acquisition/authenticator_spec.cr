@@ -2,8 +2,15 @@ require "../../spec_helper"
 require "webmock"
 
 describe EasySubtitle::Authenticator do
-  before_each { WebMock.reset }
-  after_each { WebMock.reset }
+  before_each do
+    WebMock.reset
+    EasySubtitle::Authenticator.new(EasySubtitle::Config.default).clear_token!
+  end
+
+  after_each do
+    WebMock.reset
+    EasySubtitle::Authenticator.new(EasySubtitle::Config.default).clear_token!
+  end
 
   it "logs in and returns token" do
     config = EasySubtitle::Config.default
@@ -12,11 +19,12 @@ describe EasySubtitle::Authenticator do
     config.password = "testpass"
 
     WebMock.stub(:post, "https://api.opensubtitles.com/api/v1/login")
-      .to_return(body: %({"token": "jwt_token_abc"}))
+      .to_return(body: %({"token": "jwt_token_abc", "base_url": "https://vip-api.opensubtitles.com/api/v1"}))
 
     auth = EasySubtitle::Authenticator.new(config)
     token = auth.login!
     token.should eq "jwt_token_abc"
+    auth.base_url.should eq "https://vip-api.opensubtitles.com/api/v1"
   end
 
   it "raises on failed login" do

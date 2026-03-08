@@ -12,8 +12,8 @@ module EasySubtitle
 
     def get(path : String, params : Hash(String, String) = Hash(String, String).new) : HTTP::Client::Response
       throttle!
-      uri = build_uri(path, params)
       headers = authenticated_headers
+      uri = build_uri(path, params)
       HTTP::Client.get(uri, headers: headers)
     rescue ex : IO::Error | Socket::Error
       raise ApiError.new(-1, "GET #{path} failed: #{ex.message}")
@@ -21,8 +21,8 @@ module EasySubtitle
 
     def post(path : String, body : String? = nil) : HTTP::Client::Response
       throttle!
-      uri = "#{@config.api_url}#{path}"
       headers = authenticated_headers
+      uri = "#{api_base_url}#{path}"
       headers["Content-Type"] = "application/json"
       HTTP::Client.post(uri, headers: headers, body: body)
     rescue ex : IO::Error | Socket::Error
@@ -40,12 +40,16 @@ module EasySubtitle
     end
 
     private def build_uri(path : String, params : Hash(String, String)) : String
-      uri = "#{@config.api_url}#{path}"
+      uri = "#{api_base_url}#{path}"
       unless params.empty?
         query = params.map { |k, v| "#{URI.encode_path_segment(k)}=#{URI.encode_path_segment(v)}" }.join("&")
         uri += "?#{query}"
       end
       uri
+    end
+
+    private def api_base_url : String
+      @authenticator.base_url || @config.api_url
     end
 
     private def throttle! : Nil
