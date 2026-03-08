@@ -1,0 +1,22 @@
+api_key: "test_api_key_123"
+username: "testuser"
+password: "testpass"
+api_url: "https://api.opensubtitles.com/api/v1"
+languages:
+  - en
+  - nl
+audio_track_languages:
+  - en
+  - nl
+  - ja
+accept_offset_threshold: 0.101
+reject_offset_threshold: 2.5
+series_mode: false
+smart_sync: true
+use_movie_hash: true
+last_resort_search: false
+preserve_forced_subtitles: false
+preserve_unwanted_subtitles: false
+max_search_results: 10
+top_downloads: 3
+download_retry_503: 6

@@ -1,0 +1,12 @@
+1
+00:00:03,500 --> 00:00:06,500
+Hello, world!
+
+2
+00:00:08,000 --> 00:00:10,700
+This is a sample subtitle file.
+
+3
+00:00:12,500 --> 00:00:17,000
+It contains three blocks
+for testing purposes.

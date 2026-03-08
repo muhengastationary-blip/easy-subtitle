@@ -1,0 +1,29 @@
+/docs/
+/lib/
+/bin/
+/.shards/
+*.dwarf
+*.o
+
+# Libraries don't need dependency lock
+# Applications should uncomment this:
+/shard.lock
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Config with secrets
+config.yml
+!spec/fixtures/config.yml
+!spec/fixtures/config_minimal.yml
+
+# Subservient reference (Python source)
+.subservient/

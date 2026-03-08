@@ -1,0 +1,82 @@
+{
+  "container": {
+    "type": "Matroska",
+    "properties": {
+      "title": "Test Movie"
+    }
+  },
+  "tracks": [
+    {
+      "id": 0,
+      "type": "video",
+      "codec": "HEVC/H.265/MPEG-H",
+      "properties": {
+        "language": "und",
+        "track_name": "",
+        "default_track": true,
+        "forced_track": false,
+        "codec_id": "V_MPEGH/ISO/HEVC"
+      }
+    },
+    {
+      "id": 1,
+      "type": "audio",
+      "codec": "AAC",
+      "properties": {
+        "language": "eng",
+        "track_name": "English",
+        "default_track": true,
+        "forced_track": false,
+        "codec_id": "A_AAC"
+      }
+    },
+    {
+      "id": 2,
+      "type": "audio",
+      "codec": "AAC",
+      "properties": {
+        "language": "jpn",
+        "track_name": "Japanese",
+        "default_track": false,
+        "forced_track": false,
+        "codec_id": "A_AAC"
+      }
+    },
+    {
+      "id": 3,
+      "type": "subtitles",
+      "codec": "SubRip/SRT",
+      "properties": {
+        "language": "eng",
+        "track_name": "English",
+        "default_track": true,
+        "forced_track": false,
+        "codec_id": "S_TEXT/UTF8"
+      }
+    },
+    {
+      "id": 4,
+      "type": "subtitles",
+      "codec": "SubStationAlpha",
+      "properties": {
+        "language": "jpn",
+        "track_name": "Japanese (Signs/Songs)",
+        "default_track": false,
+        "forced_track": true,
+        "codec_id": "S_TEXT/ASS"
+      }
+    },
+    {
+      "id": 5,
+      "type": "subtitles",
+      "codec": "SubRip/SRT",
+      "properties": {
+        "language": "dut",
+        "track_name": "Dutch",
+        "default_track": false,
+        "forced_track": false,
+        "codec_id": "S_TEXT/UTF8"
+      }
+    }
+  ]
+}

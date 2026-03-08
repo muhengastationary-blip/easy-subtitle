@@ -1,0 +1,29 @@
+1
+00:00:01,000 --> 00:00:04,000
+Hello, world!
+
+2
+00:00:05,500 --> 00:00:08,200
+Subtitles downloaded from www.OpenSubtitles.org
+
+3
+00:00:10,000 --> 00:00:14,500
+This is the real content.
+
+4
+00:00:15,000 --> 00:00:18,000
+Support us and become VIP member
+to remove all ads from www.OpenSubtitles.org
+
+5
+00:00:20,000 --> 00:00:24,000
+Another real subtitle line.
+
+6
+00:00:25,000 --> 00:00:28,000
+Advertise your product or brand here
+contact www.telesubtitles.com for more information
+
+7
+00:00:30,000 --> 00:00:34,000
+Final real content line.
