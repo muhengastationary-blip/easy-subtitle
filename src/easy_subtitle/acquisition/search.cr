@@ -17,14 +17,18 @@ module EasySubtitle
         end
       end
 
-      # Step 2: Text search
+      # Step 2: Text search (filtered by title to avoid wrong-show matches)
       query = QueryBuilder.build(video.name, @config, series_mode)
       unless query.empty?
         text_results = search_by_query(query, language)
-        # Deduplicate by file_id
         existing_ids = candidates.map(&.file_id).to_set
         text_results.each do |r|
-          candidates << r unless existing_ids.includes?(r.file_id)
+          next if existing_ids.includes?(r.file_id)
+          unless title_matches?(r.parent_title, video.stem)
+            @log.debug "Filtered out wrong title: '#{r.parent_title}' (#{r.release})"
+            next
+          end
+          candidates << r
         end
       end
 
@@ -80,6 +84,10 @@ module EasySubtitle
         attrs = item["attributes"]?
         next unless attrs
 
+        feature = attrs["feature_details"]?
+        parent_title = feature.try(&.["parent_title"]?.try(&.as_s?)) ||
+                       feature.try(&.["title"]?.try(&.as_s?)) || ""
+
         files = attrs["files"]?.try(&.as_a?) || next
         files.each do |file|
           file_id = file["file_id"]?.try(&.as_i64?) || next
@@ -95,6 +103,7 @@ module EasySubtitle
             release: attrs["release"]?.try(&.as_s?) || "",
             fps: attrs["fps"]?.try(&.as_f?) || 0.0,
             from_trusted: attrs["from_trusted"]?.try(&.as_bool?) || false,
+            parent_title: parent_title,
           )
         end
       end
@@ -106,6 +115,19 @@ module EasySubtitle
     rescue ex : JSON::ParseException
       @log.error "Search returned invalid JSON: #{ex.message}"
       [] of SubtitleCandidate
+    end
+
+    # Verify that the subtitle's parent title matches the video filename.
+    # All significant words (>1 char) from the title must appear in the
+    # video stem, preventing e.g. "Modern Family" matching "SPY x FAMILY".
+    private def title_matches?(parent_title : String, video_stem : String) : Bool
+      return true if parent_title.empty?
+
+      title_words = parent_title.downcase.split(/[^a-z0-9]+/).reject { |w| w.size < 2 }
+      return true if title_words.empty?
+
+      video_words = video_stem.downcase.split(/[^a-z0-9]+/).reject { |w| w.size < 2 }
+      title_words.all? { |w| video_words.includes?(w) }
     end
   end
 end

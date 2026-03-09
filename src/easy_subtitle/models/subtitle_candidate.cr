@@ -9,6 +9,7 @@ module EasySubtitle
     property release : String
     property fps : Float64
     property from_trusted : Bool
+    property parent_title : String
 
     def initialize(
       @file_id,
@@ -20,6 +21,7 @@ module EasySubtitle
       @release = "",
       @fps = 0.0,
       @from_trusted = false,
+      @parent_title = "",
     )
     end
 
