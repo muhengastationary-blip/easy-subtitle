@@ -1,7 +1,14 @@
 module EasySubtitle
   class Syncer
     def initialize(@config : Config, @log : Log, runner : SyncBackend? = nil)
-      @runner = runner || SyncBackendFactory.build(@config, @log)
+      @runner = runner || begin
+        backend = SyncBackendFactory.build(@config, @log)
+        unless backend.available?
+          raise ExternalToolError.new(backend.name, -1,
+            "backend not available. Run 'easy-subtitle doctor' to check dependencies.")
+        end
+        backend
+      end
     end
 
     def sync(video : VideoFile, candidates : Array(Path), language : String) : SyncResult?

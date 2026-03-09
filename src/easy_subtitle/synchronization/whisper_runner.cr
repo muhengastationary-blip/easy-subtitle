@@ -35,6 +35,17 @@ module EasySubtitle
       "brew install whisper-cpp  OR  build from https://github.com/ggml-org/whisper.cpp"
     end
 
+    def available? : Bool
+      !find_binary.nil? && Shell.which("ffmpeg") != nil && find_alass != nil
+    end
+
+    private def find_alass : String?
+      ALASS_BINARY_NAMES.each do |name|
+        return name if Shell.which(name)
+      end
+      nil
+    end
+
     def sync(video_path : Path, sub_in : Path, sub_out : Path) : ShellResult
       alass_cmd = find_alass!
 
@@ -126,10 +137,7 @@ module EasySubtitle
     end
 
     private def find_alass! : String
-      ALASS_BINARY_NAMES.each do |name|
-        return name if Shell.which(name)
-      end
-      raise ExternalToolError.new("alass", -1,
+      find_alass || raise ExternalToolError.new("alass", -1,
         "not found (tried: #{ALASS_BINARY_NAMES.join(", ")}). Install: cargo install alass-cli")
     end
 
